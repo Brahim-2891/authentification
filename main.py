@@ -24,6 +24,11 @@ login_manager.init_app(app)
 def load_user(user_id):
     return db.get_or_404(User, user_id)
 
+# alternative way to pass the logged_in variable to the templates = Context processor to inject 'logged_in' variable
+# @app.context_processor
+# def inject_logged_in():
+#     return {'logged_in': current_user.is_authenticated}
+
 
 # CREATE TABLE IN DB with the UserMixin
 class User(UserMixin, db.Model):
@@ -36,14 +41,12 @@ class User(UserMixin, db.Model):
 with app.app_context():
     db.create_all()
 
-@app.context_processor
-def inject_logged_in():
-    return dict(logged_in=current_user.is_authenticated)
-
 
 @app.route('/')
 def home():
-    return render_template("index.html")
+    # Passing True or False if the user is authenticated. 
+    return render_template("index.html", logged_in=current_user.is_authenticated)
+
 
 
 @app.route('/register', methods=["GET", "POST"])
@@ -72,7 +75,8 @@ def register():
         db.session.commit()
         login_user(new_user)
         return redirect(url_for("secrets"))
-    return render_template("register.html")
+    # Passing True or False if the user is authenticated. 
+    return render_template("register.html", logged_in=current_user.is_authenticated)
 
 
 @app.route('/login', methods=["GET", "POST"])
@@ -81,8 +85,12 @@ def login():
         email = request.form.get('email')
         password = request.form.get('password')
 
+        # Find user by email entered.
         result = db.session.execute(db.select(User).where(User.email == email))
         user = result.scalar()
+
+
+        # Check stored password hash against entered password hashed.
         # Email doesn't exist or password incorrect.
         if not user:
             flash("That email does not exist, please try again.")
@@ -94,7 +102,8 @@ def login():
             login_user(user)
             return redirect(url_for('secrets'))
 
-    return render_template("login.html")
+    # Passing True or False if the user is authenticated. 
+    return render_template("login.html", logged_in=current_user.is_authenticated)
 
 
 # Only logged-in users can access the route
@@ -103,7 +112,7 @@ def login():
 def secrets():
     print(current_user.name)
     # Passing the name from the current_user
-    return render_template("secrets.html", name=current_user.name)
+    return render_template("secrets.html", name=current_user.name, logged_in=True)
 
 
 @app.route('/logout')
