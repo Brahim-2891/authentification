@@ -36,6 +36,10 @@ class User(UserMixin, db.Model):
 with app.app_context():
     db.create_all()
 
+@app.context_processor
+def inject_logged_in():
+    return dict(logged_in=current_user.is_authenticated)
+
 
 @app.route('/')
 def home():
